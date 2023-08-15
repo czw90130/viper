@@ -15,42 +15,58 @@
 #include <iostream>
 #include <thread>
 
+// 定义tiny object loader的实现
 #define TINYOBJLOADER_IMPLEMENTATION
+// 使用PNG格式
 #define USE_PNG
 
+// 引入OpenGP的库头文件
 #include <OpenGP/GL/Application.h>
 #include <OpenGP/GL/Components/GUICanvasComponent.h>
 #include <OpenGP/GL/ImguiRenderer.h>
 #include <OpenGP/Image/Image.h>
 
+// 引入本地的头文件
 #include "OctopusComponent.h"
 #include "Scene.h"
 
+// 引入CUDA头文件来处理碰撞
 #include "CollisionGrid.cuh"
 
+// 定义所有OpenGP的实现在这个文件
 #define OPENGP_IMPLEMENT_ALL_IN_THIS_FILE
 #include <OpenGP/util/implementations.h>
 
+// 使用OpenGP的命名空间
 using namespace OpenGP;
 
 int main(int argc, char **argv) {
 
+    // 定义阴影的大小
     int shadow_size = 2048;
 
+    // 初始化应用
     Application app;
 
+    // 初始化场景
     Scene scene;
 
+    // 创建一个实体作为灯源，并附带一个摄像机组件
     auto &light_entity = scene.create_entity_with<CameraComponent>();
+    // 设置灯源的方向
     light_entity.get<TransformComponent>().set_forward(
         Vec3(-1, -2, 0).normalized());
+    // 设置灯源的位置
     light_entity.get<TransformComponent>().position = Vec3(50, 100, 0);
 
+    // 计算投影和视图矩阵，用于计算阴影
     Mat4x4 shadow_matrix =
         (light_entity.get_projection(shadow_size, shadow_size) *
          light_entity.get_view());
 
+    // 创建一个用于渲染的地板实体
     auto &floor_entity = scene.create_entity_with<WorldRenderComponent>();
+    // 设置地板的渲染器
     auto &floor_renderer = floor_entity.set_renderer<SurfaceMeshRenderer>();
     floor_renderer.get_gpu_mesh().set_vpoint(
         {Vec3(-10000, 0, -10000), Vec3(10000, 0, -10000),
@@ -169,8 +185,10 @@ int main(int argc, char **argv) {
     floor_renderer.set_material(floormat);
     floor_renderer.rebuild();
 
+    // 创建一个模拟场景  
     viper::Scene sim_scene;
 
+    // 为OctopusComponent设置模拟场景
     OctopusComponent::v_scene = &sim_scene;
     auto &octoswarm = scene.create_entity_with<OctopusComponent>();
 
@@ -215,10 +233,14 @@ int main(int argc, char **argv) {
     octoswarm.pillar_renderer->get_material().set_property(
         "shadow_far", light_entity.far_plane);
 
+    // 创建一个带有Trackball组件的实体
     auto &c_entity = scene.create_entity_with<TrackballComponent>();
     c_entity.oriented = true;
 
+    // 设置窗口的宽和高
     int ww = 3840, wh = 1080;
+
+    // 以下是创建和管理Framebuffer，纹理等的代码
 
     Framebuffer fb, fb_shadow;
     RGB8Texture color_map, color_map_shadow;
@@ -246,6 +268,7 @@ int main(int argc, char **argv) {
         reinterpret_cast<char*>(&colmap_cpu(0, 0)), 12582912);
     colmap.upload(colmap_cpu);
 
+    // 创建一个全屏四边形
     FullscreenQuad fsquad;
 
     bool show_pills = false;
@@ -327,6 +350,7 @@ int main(int argc, char **argv) {
         fsquad.draw_texture(color_map);
     };
 
+    // 创建一个窗口
     auto &window = app.create_window([&](Window &window) {
         std::tie(ww, wh) = window.get_size();
 
@@ -351,9 +375,11 @@ int main(int argc, char **argv) {
         }
     });
 
+    // 设置窗口大小和标题
     window.set_size(ww, wh);
     window.set_title("VIPER Demo");
 
+    // 以下是关于输入处理和UI的代码
     auto &input = window.get_input();
 
     c_entity.get<CameraComponent>().set_window(window);

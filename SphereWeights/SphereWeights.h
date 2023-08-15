@@ -15,4 +15,13 @@
 #include <OpenGP/SphereMesh/SphereMesh.h>
 #include <OpenGP/SurfaceMesh/SurfaceMesh.h>
 
+/**
+ * @brief 计算球形网格上的权重并应用到表面网格上。
+ * 
+ * 此函数取球形网格作为输入，并计算其权重，
+ * 然后将这些权重应用到给定的表面网格上。
+ *
+ * @param smesh 输入的球形网格。
+ * @param mesh 输出的表面网格，用于存储权重。
+ */
 void calc_weights(const OpenGP::SphereMesh &smesh, OpenGP::SurfaceMesh &mesh);
