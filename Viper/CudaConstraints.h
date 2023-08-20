@@ -20,6 +20,12 @@
  * 这个文件包含多种物理模拟中使用的约束结构，包括距离约束、蒙皮约束、体积约束等。
  */
 
+#ifdef __CUDA_ARCH__
+#define CUDA_HOST_DEVICE __host__ __device__
+#else
+#define CUDA_HOST_DEVICE
+#endif
+
 namespace viper {
 
 /**
@@ -28,15 +34,16 @@ namespace viper {
  * 所有约束都从这个基础结构继承。
  */
 struct ConstraintBase {
-    bool enabled = true; ///< 标记此约束是否启用。
+    CUDA_HOST_DEVICE ConstraintBase() : enabled(true) {} ///< 默认构造函数
+    bool enabled; ///< 标记此约束是否启用。
 };
 
 /**
  * @brief 距离约束。
  */
 struct C_distance : public ConstraintBase {
-    C_distance() = default;
-    C_distance(int a, int b, float restDistance, float compliance = 0.f)
+    CUDA_HOST_DEVICE C_distance() = default;
+    CUDA_HOST_DEVICE C_distance(int a, int b, float restDistance, float compliance = 0.f)
         : a(a), b(b), rDist(restDistance), compliance(compliance) {}
     int a;
     int b;
@@ -48,8 +55,8 @@ struct C_distance : public ConstraintBase {
  * @brief 最大距离约束。
  */
 struct C_distancemax : public ConstraintBase {
-    C_distancemax() = default;
-    C_distancemax(int a, int b, float max_distance)
+    CUDA_HOST_DEVICE C_distancemax() = default;
+    CUDA_HOST_DEVICE C_distancemax(int a, int b, float max_distance)
         : a(a), b(b), max_distance(max_distance) {}
     int a;
     int b;
@@ -60,8 +67,8 @@ struct C_distancemax : public ConstraintBase {
  * @brief 皮肤约束
  */
 struct C_skinning : public ConstraintBase {
-    C_skinning() = default;
-    C_skinning(int i, int t0, int t1, float w0, float w1)
+    CUDA_HOST_DEVICE C_skinning() = default;
+    CUDA_HOST_DEVICE C_skinning(int i, int t0, int t1, float w0, float w1)
         : i(i), t0(t0), t1(t1), w0(w0), w1(w1) {}
     int i; ///< 皮肤索引
     int t0; ///< 初始时间
@@ -75,7 +82,7 @@ struct C_skinning : public ConstraintBase {
  */
 struct C_volume : public ConstraintBase {
     // 默认构造函数
-    C_volume() = default;
+    CUDA_HOST_DEVICE C_volume() = default;
     /**
      * @brief 构造函数用于设置粒子索引、参考体积和顺从度
      * @param a 粒子索引a
@@ -83,7 +90,7 @@ struct C_volume : public ConstraintBase {
      * @param Vr 参考体积
      * @param compliance 顺从度，默认为0.0
      */
-    C_volume(int a, int b, float Vr, float compliance = 0.0)
+    CUDA_HOST_DEVICE C_volume(int a, int b, float Vr, float compliance = 0.0)
         : a(a), b(b), Vr(Vr), compliance(compliance) {}
 
     /**
@@ -93,7 +100,7 @@ struct C_volume : public ConstraintBase {
      * @param state 当前的模拟状态，其中包含粒子的位置和半径
      * @param compliance 顺从度，默认为0.0
      */
-    C_volume(int a, int b, const SimulationState &state, float compliance = 0.0)
+    CUDA_HOST_DEVICE C_volume(int a, int b, const SimulationState &state, float compliance = 0.0)
         : a(a), b(b), compliance(compliance) {
         // 获取粒子a和b的半径
         float ra = state.r[a];
@@ -135,7 +142,7 @@ struct C_volume : public ConstraintBase {
 struct C_volume2 : public ConstraintBase {
     
     // 默认构造函数
-    C_volume2() = default;
+    CUDA_HOST_DEVICE C_volume2() = default;
 
     /**
      * @brief 构造函数，用于根据模拟状态和粒子索引初始化体积约束2
@@ -146,7 +153,7 @@ struct C_volume2 : public ConstraintBase {
      * @param state 当前的模拟状态，其中包含粒子的位置和半径信息
      * @param compliance 顺从度，默认为0.0
      */
-    C_volume2(int a, int b, int c, const SimulationState &state,
+    CUDA_HOST_DEVICE C_volume2(int a, int b, int c, const SimulationState &state,
               float compliance = 0.0)
         : a(a), b(b), c(c), compliance(compliance) {
         // 计算粒子a和粒子b之间的初始距离或长度
@@ -171,7 +178,7 @@ struct C_volume2 : public ConstraintBase {
 struct C_bend : public ConstraintBase {
     
     // 默认构造函数
-    C_bend() = default;
+    CUDA_HOST_DEVICE C_bend() = default;
 
     /**
      * @brief 构造函数，用于根据模拟状态和粒子索引初始化弯曲约束
@@ -181,7 +188,7 @@ struct C_bend : public ConstraintBase {
      * @param state 当前的模拟状态，其中包含粒子的四元数（旋转信息）
      * @param compliance 顺从度，默认为0.0
      */
-    C_bend(int a, int b, const SimulationState &state, float compliance = 0.f)
+    CUDA_HOST_DEVICE C_bend(int a, int b, const SimulationState &state, float compliance = 0.f)
         : a(a), b(b), compliance(compliance) {
         // 计算休息位置的Darboux向量，表示两个粒子在没有外部力作用时的旋转关系
         // 这里使用第一个粒子的四元数的共轭与第二个粒子的四元数相乘得到
@@ -198,8 +205,8 @@ struct C_bend : public ConstraintBase {
  * @brief 拉伸约束
  */
 struct C_stretch : public ConstraintBase {
-    C_stretch() = default;
-    C_stretch(int a, int b, int c, float L, float compliance = 0.f)
+    CUDA_HOST_DEVICE C_stretch() = default;
+    CUDA_HOST_DEVICE C_stretch(int a, int b, int c, float L, float compliance = 0.f)
         : a(a), b(b), c(c), L(L), compliance(compliance) {}
 
     int a;   ///< 粒子索引a particle id
@@ -229,8 +236,8 @@ struct C_collision : public ConstraintBase {
  * @brief 半径约束
  */
 struct C_radius : public ConstraintBase {
-    C_radius() = default;
-    C_radius(int a, float r, float compliance = 0.0)
+    CUDA_HOST_DEVICE C_radius() = default;
+    CUDA_HOST_DEVICE C_radius(int a, float r, float compliance = 0.0)
         : a(a), r(r), compliance(compliance) {}
     int a; ///< 粒子索引
     float r; ///< 半径
@@ -245,7 +252,7 @@ struct C_radius : public ConstraintBase {
  */
 struct C_bilap : public ConstraintBase {
     /// @brief 默认构造函数
-    C_bilap() = default;
+    CUDA_HOST_DEVICE C_bilap() = default;
 
     /**
      * @brief 参数化构造函数
@@ -257,7 +264,7 @@ struct C_bilap : public ConstraintBase {
      * 根据给定的粒子索引向量和当前粒子索引，初始化权重数组和粒子索引数组。
      * 权重数组和粒子索引数组的值根据当前粒子索引i的位置进行不同的初始化。
      */
-    C_bilap(const std::vector<int> &A, int i, float compliance = 0.0)
+    CUDA_HOST_DEVICE C_bilap(const std::vector<int> &A, int i, float compliance = 0.0)
         : compliance(compliance) {
         int n = A.size();
         if (i == 0) {
@@ -341,7 +348,7 @@ struct C_bilap : public ConstraintBase {
 struct C_shape : public ConstraintBase {
     
     // 默认构造函数
-    C_shape() = default;
+    CUDA_HOST_DEVICE C_shape() = default;
 
     /**
      * @brief 构造函数用于根据模拟状态初始化形状匹配约束
@@ -349,7 +356,7 @@ struct C_shape : public ConstraintBase {
      * @param state 当前的模拟状态，其中包含粒子的位置和半径
      * @param compliance 顺从度，默认为0.0
      */
-    C_shape(const std::vector<int> &ids, const SimulationState &state,
+    CUDA_HOST_DEVICE C_shape(const std::vector<int> &ids, const SimulationState &state,
             float compliance = 0.0)
         : q(Quaternion::Identity()), // 设置默认旋转量为单位四元数（无旋转）
           K(1.f),                    // 默认的刚性系数为1
@@ -407,7 +414,7 @@ struct C_shape : public ConstraintBase {
 struct C_shape2 : public ConstraintBase {
     
     ///< 默认构造函数
-    C_shape2() = default;
+    CUDA_HOST_DEVICE C_shape2() = default;
 
     /**
      * @brief 构造函数，用于初始化形状匹配约束2
@@ -417,7 +424,7 @@ struct C_shape2 : public ConstraintBase {
      * @param qbs 与粒子相对应的旋转量b的数组
      * @param state 当前的模拟状态
      */
-    C_shape2(const std::vector<int> &ids, const std::vector<int> &qas,
+    CUDA_HOST_DEVICE C_shape2(const std::vector<int> &ids, const std::vector<int> &qas,
              const std::vector<int> &qbs, const SimulationState &state) {
         // 获取粒子的数量
         n = ids.size();
@@ -451,8 +458,8 @@ struct C_shape2 : public ConstraintBase {
  * @brief 触摸约束
  */
 struct C_touch : public ConstraintBase {
-    C_touch() = default; ///< 默认构造函数
-    C_touch(int a, int b) : a(a), b(b) {} ///< 带参数构造函数
+    CUDA_HOST_DEVICE C_touch() = default; ///< 默认构造函数
+    CUDA_HOST_DEVICE C_touch(int a, int b) : a(a), b(b) {} ///< 带参数构造函数
     int a; ///< 粒子索引a
     int b; ///< 粒子索引b
 };

@@ -65,8 +65,8 @@ class OctopusComponent : public Component {
   public:
     static viper::Scene *v_scene;
 
-    const int n_cows = 90;
-    int n_active = 90;
+    const int n_cows = 3;
+    int n_active = 3;
 
     int scene_index = 0;
 

@@ -362,10 +362,6 @@ struct generate_collisions {
  * @brief 碰撞过滤结构体。
  */
 struct collision_filter {
-    Vec2i *pills;
-    int *group;
-    CudaStatePtr S;
-
     Vec2i *pills;  /**< pill数组指针。 */
     int *group;    /**< 组数组指针。 */
     CudaStatePtr S; /**< CUDA状态指针。 */
@@ -413,7 +409,7 @@ template <typename T> struct DisabledPredicate {
      * @param constraint 要进行判断的约束。
      * @return 返回 true 如果约束被禁用，否则返回 false。
      */
-    bool operator()(const T &constraint) { return !constraint.enabled; }
+    __host__ __device__ bool operator()(const T &constraint) { return !constraint.enabled; }
 };
 
 /**
